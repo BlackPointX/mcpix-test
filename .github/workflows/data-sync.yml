@@ -1,0 +1,50 @@
+
+name: Update Data Only
+
+on:
+  schedule:
+    - cron: '*/30 * * * *' # ZMIANA: Co 30 minut (np. 14:00, 14:30, 15:00)
+  workflow_dispatch: # Ręcznie
+  repository_dispatch: # Z Google Apps Script
+    types: [update_products]
+
+permissions:
+  contents: write
+
+jobs:
+  update-json:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          ref: main # Jawnie wskazujemy main
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Instalacja nie jest konieczna, jeśli fetch-products używa tylko wbudowanych modułów Node 20 (fs, path, fetch).
+      # Jeśli dodasz biblioteki zewnętrzne, odkomentuj linię z npm install.
+      # - name: Install Dependencies
+      #   run: npm install
+
+      - name: Run Fetch Script
+        run: node scripts/fetch-products.js
+
+      - name: Commit and Push Data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Dodajemy data.json, który leży teraz w głównym katalogu (root)
+          git add data.json
+          
+          if git diff --staged --quiet; then
+            echo "✅ Brak zmian w cenach/stanach."
+          else
+            git commit -m "🤖 Auto-update: data.json"
+            git push origin main
+            echo "🚀 Zaktualizowano data.json na main"
+          fi

@@ -1,0 +1,8 @@
+{
+  "name": "pokecustom-shop",
+  "type": "module",
+  "scripts": {
+    "update-data": "node scripts/fetch-products.js"
+  },
+  "dependencies": {}
+}
